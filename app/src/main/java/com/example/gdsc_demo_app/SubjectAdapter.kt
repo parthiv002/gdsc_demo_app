@@ -7,9 +7,9 @@ import android.widget.Button
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 
-class SubjectAdapter(
-    private val subjects: MutableList<Subject>,
-    private val onSubjectsUpdated: (List<Subject>) -> Unit
+class SubjectAdapter(private val subjects: MutableList<Subject>,
+                     private val sharedViewModel: SubjectViewModel,
+                     private val onSubjectsUpdated: (List<Subject>) -> Unit
 ) : RecyclerView.Adapter<SubjectAdapter.SubjectViewHolder>() {
 
     inner class SubjectViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
@@ -17,7 +17,7 @@ class SubjectAdapter(
         val tvPercentage: TextView = itemView.findViewById(R.id.tvPercentage)
         val btnYes: Button = itemView.findViewById(R.id.btnYes)
         val btnNo: Button = itemView.findViewById(R.id.btnNo)
-        val btnDelete: Button = itemView.findViewById(R.id.btnDelete)
+//        val btnDelete: Button = itemView.findViewById(R.id.btnDelete)
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): SubjectViewHolder {
@@ -27,7 +27,9 @@ class SubjectAdapter(
 
     override fun onBindViewHolder(holder: SubjectViewHolder, position: Int) {
         val subject = subjects[position]
-        holder.tvSubjectName.text = subject.name
+        val liveSubjectName=sharedViewModel._subjectName.value
+        subject.name=liveSubjectName!!
+        holder.tvSubjectName.text = liveSubjectName
         updatePercentage(holder.tvPercentage, subject)
 
         // Increment attendance and update UI
@@ -48,12 +50,12 @@ class SubjectAdapter(
         }
 
         // Delete a subject and notify parent
-        holder.btnDelete.setOnClickListener {
-            subjects.removeAt(position)
-            notifyItemRemoved(position)
-            notifyItemRangeChanged(position, subjects.size)
-            onSubjectsUpdated(subjects)
-        }
+//        holder.btnDelete.setOnClickListener {
+//            subjects.removeAt(position)
+//            notifyItemRemoved(position)
+//            notifyItemRangeChanged(position, subjects.size)
+//            onSubjectsUpdated(subjects)
+//        }
     }
 
     /**

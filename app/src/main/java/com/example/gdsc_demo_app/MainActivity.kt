@@ -4,9 +4,13 @@ import android.annotation.SuppressLint
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
+import android.view.LayoutInflater
 import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.example.gdsc_demo_app.databinding.ActivityMainBinding
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
@@ -16,17 +20,22 @@ class MainActivity : AppCompatActivity() {
     private lateinit var adapter: SubjectAdapter
     private val subjects = mutableListOf<Subject>()
     private val sharedPreferences by lazy { getSharedPreferences("SubjectPrefs", Context.MODE_PRIVATE) }
+    private lateinit var binding: ActivityMainBinding
+    private lateinit var subjectViewModel: SubjectViewModel
 
     @SuppressLint("NotifyDataSetChanged")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_main)
+
+        binding=ActivityMainBinding.inflate(layoutInflater)
+        setContentView(binding.root)
+        subjectViewModel=ViewModelProvider(this).get(SubjectViewModel::class.java)
 
         // Load saved subjects from SharedPreferences
         loadSubjects()
 
         // Initialize the adapter with the onSubjectsUpdated callback
-        adapter = SubjectAdapter(subjects) { updatedSubjects ->
+        adapter = SubjectAdapter(subjects,subjectViewModel) { updatedSubjects ->
             saveSubjects(updatedSubjects)
         }
 
@@ -38,8 +47,7 @@ class MainActivity : AppCompatActivity() {
 
         // Handle floating action button click for adding subjects
         findViewById<FloatingActionButton>(R.id.fab).setOnClickListener {
-            val intent = Intent(this, AddSubjectActivity::class.java)
-            startActivityForResult(intent, ADD_SUBJECT_REQUEST_CODE)
+            NewSubject().show(supportFragmentManager,"NewSubjectTag")
         }
     }
 
