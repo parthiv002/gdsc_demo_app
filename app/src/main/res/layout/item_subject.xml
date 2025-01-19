@@ -5,6 +5,7 @@
     android:layout_height="wrap_content"
     android:background="@drawable/border"
     android:backgroundTint="#728A8888"
+    android:layout_margin="10dp"
     android:padding="16dp">
 
     <!-- Subject Name and Percentage -->
@@ -46,6 +47,7 @@
             android:text="Attendance:" />
 
         <TextView
+            android:id="@+id/tvAtClasses"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginStart="10dp"
@@ -61,6 +63,7 @@
             android:textSize="16sp"
             android:textColor="@android:color/holo_green_dark" />
         <TextView
+            android:id="@+id/tvTotalClass"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginEnd="8dp"
