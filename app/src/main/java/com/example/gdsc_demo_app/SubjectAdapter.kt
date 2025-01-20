@@ -1,11 +1,13 @@
 package com.example.gdsc_demo_app
 
 import android.annotation.SuppressLint
+import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Button
 import android.widget.TextView
+import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.RecyclerView
 
 class SubjectAdapter(private val subjects: MutableList<Subject>,
@@ -19,6 +21,7 @@ class SubjectAdapter(private val subjects: MutableList<Subject>,
         val tvTotalClass:TextView=itemView.findViewById(R.id.tvTotalClass)
         val btnYes: Button = itemView.findViewById(R.id.btnYes)
         val btnNo: Button = itemView.findViewById(R.id.btnNo)
+        val btnEdit:Button=itemView.findViewById(R.id.btnEdit)
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): SubjectViewHolder {
@@ -29,26 +32,38 @@ class SubjectAdapter(private val subjects: MutableList<Subject>,
     override fun onBindViewHolder(holder: SubjectViewHolder, position: Int) {
         val subject = subjects[position]
         holder.tvSubjectName.text = subject.name
-        updatePercentage(holder.tvAtClass,holder.tvTotalClass,holder.tvPercentage, subject)
+        updatePercentage(holder.tvAtClass, holder.tvTotalClass, holder.tvPercentage, subject)
 
-        // Increment attendance and update UI
         holder.btnYes.setOnClickListener {
             subject.attendedClasses++
             subject.totalClasses++
-            notifyItemChanged(position) // Notify changes for the specific item
-            updatePercentage(holder.tvAtClass,holder.tvTotalClass,holder.tvPercentage, subject)
-            onSubjectsUpdated(subjects) // Notify parent of the update
-        }
-
-        // Increment total classes without attendance
-        holder.btnNo.setOnClickListener {
-            subject.totalClasses++
             notifyItemChanged(position)
-            updatePercentage(holder.tvAtClass,holder.tvTotalClass,holder.tvPercentage, subject)
+            updatePercentage(holder.tvAtClass, holder.tvTotalClass, holder.tvPercentage, subject)
             onSubjectsUpdated(subjects)
         }
 
+        holder.btnNo.setOnClickListener {
+            subject.totalClasses++
+            notifyItemChanged(position)
+            updatePercentage(holder.tvAtClass, holder.tvTotalClass, holder.tvPercentage, subject)
+            onSubjectsUpdated(subjects)
+        }
+
+        holder.btnEdit.setOnClickListener {
+            val bundle = Bundle().apply {
+                putString("subjectName", subject.name)
+                putInt("attendedClasses", subject.attendedClasses)
+                putInt("totalClasses", subject.totalClasses)
+                putInt("position", position) // Send the position to identify the item later
+            }
+
+            val editFragment = EditFragment().apply {
+                arguments = bundle
+            }
+            editFragment.show((holder.itemView.context as AppCompatActivity).supportFragmentManager, "EditFragment")
+        }
     }
+
 
     /**
      * Update the attendance percentage displayed for a subject.

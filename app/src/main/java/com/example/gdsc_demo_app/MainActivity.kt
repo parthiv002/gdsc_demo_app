@@ -87,6 +87,25 @@ class MainActivity : AppCompatActivity() {
                 saveSubjects(subjects)
             }
         }
+
+        supportFragmentManager.setFragmentResultListener("rKey", this) { _, bundle ->
+            val newSubjectName = bundle.getString("newSubjectName")
+            val newAttendClass = bundle.getInt("newAttendClass")
+            val newTotalClass = bundle.getInt("newTotalClass")
+            val position = bundle.getInt("position")
+
+            if (!newSubjectName.isNullOrEmpty() && position >= 0) {
+                // Update the subject data
+                subjects[position].name = newSubjectName
+                subjects[position].attendedClasses = newAttendClass
+                subjects[position].totalClasses = newTotalClass
+
+                // Notify adapter and persist changes
+                adapter.notifyItemChanged(position)
+                saveSubjects(subjects)
+            }
+        }
+
     }
 
     private fun loadSubjects() {

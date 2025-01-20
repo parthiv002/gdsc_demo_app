@@ -33,5 +33,8 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="Add"
+        android:textSize="20dp"
+        android:textColor="@color/white"
+        android:backgroundTint="#9C27B0"
         android:layout_margin="15dp"/>
 </LinearLayout>
