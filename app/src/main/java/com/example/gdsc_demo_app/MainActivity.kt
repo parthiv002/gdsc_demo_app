@@ -4,32 +4,39 @@ import android.annotation.SuppressLint
 import android.content.Context
 import android.os.Bundle
 import android.view.View
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.android.material.snackbar.Snackbar
+import com.google.firebase.FirebaseApp
+import com.google.firebase.database.DataSnapshot
+import com.google.firebase.database.DatabaseError
+import com.google.firebase.database.DatabaseReference
+import com.google.firebase.database.FirebaseDatabase
+import com.google.firebase.database.ValueEventListener
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 
 class MainActivity : AppCompatActivity() {
 
     private lateinit var adapter: SubjectAdapter
+    private lateinit var dbReference: DatabaseReference
     private val subjects = mutableListOf<Subject>()
-    private val sharedPreferences by lazy { getSharedPreferences("SubjectPrefs", Context.MODE_PRIVATE) }
 
     @SuppressLint("NotifyDataSetChanged")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        FirebaseApp.initializeApp(this)
         setContentView(R.layout.activity_main)
 
-        // Load saved subjects from SharedPreferences
-        loadSubjects()
+        dbReference = FirebaseDatabase.getInstance().getReference("Subjects")
 
-        // Initialize the adapter with the onSubjectsUpdated callback
+        // Initialize the adapter with the callback
         adapter = SubjectAdapter(subjects) { updatedSubjects ->
-            saveSubjects(updatedSubjects)
+            saveSubjectsToFirebase(updatedSubjects)
         }
 
         // Set up RecyclerView
@@ -37,12 +44,8 @@ class MainActivity : AppCompatActivity() {
             layoutManager = LinearLayoutManager(this@MainActivity)
             adapter = this@MainActivity.adapter
 
-            val itemTouchHelper=ItemTouchHelper(object:ItemTouchHelper.SimpleCallback(0,ItemTouchHelper.LEFT or ItemTouchHelper.RIGHT){
-                override fun onMove(
-                    recyclerView: RecyclerView,
-                    viewHolder: RecyclerView.ViewHolder,
-                    target: RecyclerView.ViewHolder
-                ): Boolean {
+            val itemTouchHelper = ItemTouchHelper(object : ItemTouchHelper.SimpleCallback(0, ItemTouchHelper.LEFT or ItemTouchHelper.RIGHT) {
+                override fun onMove(recyclerView: RecyclerView, viewHolder: RecyclerView.ViewHolder, target: RecyclerView.ViewHolder): Boolean {
                     return false
                 }
 
@@ -55,7 +58,7 @@ class MainActivity : AppCompatActivity() {
                     this@apply.adapter?.notifyItemRemoved(position)
 
                     // Persist the updated list
-                    saveSubjects(subjects)
+                    saveSubjectsToFirebase(subjects)
 
                     // Show Undo Snackbar
                     Snackbar.make(findViewById(R.id.recyclerView), "Subject removed", Snackbar.LENGTH_LONG)
@@ -63,7 +66,7 @@ class MainActivity : AppCompatActivity() {
                             // Restore the removed item
                             subjects.add(position, removedSubject)
                             this@apply.adapter?.notifyItemInserted(position)
-                            saveSubjects(subjects)
+                            saveSubjectsToFirebase(subjects)
                         }.show()
                 }
             })
@@ -80,11 +83,12 @@ class MainActivity : AppCompatActivity() {
             val subjectName = bundle.getString("subjectName")
             if (!subjectName.isNullOrEmpty()) {
                 // Add the new subject to the list
-                subjects.add(Subject(name = subjectName))
+                val newSubject = Subject(name = subjectName)
+                subjects.add(newSubject)
                 adapter.notifyDataSetChanged()
 
-                // Save updated subjects to SharedPreferences
-                saveSubjects(subjects)
+                // Save updated subjects to Firebase
+                saveSubjectsToFirebase(subjects)
             }
         }
 
@@ -102,23 +106,39 @@ class MainActivity : AppCompatActivity() {
 
                 // Notify adapter and persist changes
                 adapter.notifyItemChanged(position)
-                saveSubjects(subjects)
+                saveSubjectsToFirebase(subjects)
             }
         }
 
+        // Fetch subjects from Firebase when the app starts
+        fetchSubjectsFromFirebase()
     }
 
-    private fun loadSubjects() {
-        val json = sharedPreferences.getString("subjects", null)
-        if (!json.isNullOrEmpty()) {
-            val type = object : TypeToken<List<Subject>>() {}.type
-            val savedSubjects: List<Subject> = Gson().fromJson(json, type)
-            subjects.addAll(savedSubjects)
+    private fun fetchSubjectsFromFirebase() {
+        dbReference.addValueEventListener(object : ValueEventListener {
+            @SuppressLint("NotifyDataSetChanged")
+            override fun onDataChange(snapshot: DataSnapshot) {
+                subjects.clear()
+                for (subjectSnapshot in snapshot.children) {
+                    val subject = subjectSnapshot.getValue(Subject::class.java)
+                    if (subject != null) {
+                        subjects.add(subject)
+                    }
+                }
+                adapter.notifyDataSetChanged()
+            }
+
+            override fun onCancelled(error: DatabaseError) {
+                // Handle error
+            }
+        })
+    }
+
+    private fun saveSubjectsToFirebase(updatedSubjects: List<Subject>) {
+        dbReference.setValue(updatedSubjects).addOnCompleteListener { task ->
+            if (!task.isSuccessful) {
+                Toast.makeText(this,task.exception.toString(),Toast.LENGTH_LONG).show()
+            }
         }
-    }
-
-    private fun saveSubjects(updatedSubjects: List<Subject>) {
-        val json = Gson().toJson(updatedSubjects)
-        sharedPreferences.edit().putString("subjects", json).apply()
     }
 }
